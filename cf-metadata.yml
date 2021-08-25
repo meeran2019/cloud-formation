@@ -1,0 +1,37 @@
+
+# This is to takeup the cloudformation to next level.
+# METADATA:
+#     It consists of Designer, Authentication , Init & Interface (group and order of parameters)
+
+
+Resources:
+  myEc2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref GetImageId
+      InstanceType: !Ref GetInstanceType
+
+Parameters:
+  GetImageId:
+    Type: String 
+    Default: ami-0ff8a91507f77f867
+  
+  GetInstanceType:
+    Type: String 
+    Default: t2.micro
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - 
+        Label:
+          default: "Instance Configuration"
+        Parameters: 
+          - GetImageId
+          - GetInstanceType
+    ParameterLabels:
+      GetImageId:
+         default: "Enter the Image ID"
+      GetInstanceType:
+         default: 'Enter the Instance Type'
+
