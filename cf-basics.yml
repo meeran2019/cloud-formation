@@ -1,0 +1,119 @@
+# CLOUD FORMATION BASIC CONCEPTS
+
+# Resource is keyword to start.
+# Followed by resources, to give the resource name and type of resources.
+Resources:
+  Mys3bucket:
+    Type: AWS::S3::Bucket
+    Condition: CreateS3Bucket
+#    DeletionPolicy: Retain                      # deletion policy helps to process during stack deletion.
+#    UpdateReplacePolicy: Retain                 # it is consider during update for replacement of old resources.
+    Properties:                          
+      BucketName: !Ref BucketNameParameter      # bucket name is not mandatory. If not given, taken the name as stack name +                                           resource name + random characters. Here referring the other parameter.
+      AccessControl: PublicRead
+    DependsOn:                                  # depends on used to create dependancy.
+      - MyEC2Instance                           
+                             
+# To create EC2 instance
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap [RegionMap, !Ref "AWS::Region", HVM64]    #!FindInMap is used for Mappings reference.
+      InstanceType: t2.micro
+      SecurityGroups:
+        - !Ref SecurityGroup1
+        - !Ref SecurityGroup2
+
+# To create the security group 1
+  SecurityGroup1:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: security group 1
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+
+# To create the security group 2
+  SecurityGroup2:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: security group 2
+      SecurityGroupIngress:
+      - IpProtocol: tcp 
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+
+# Parameters are used to pass the dynamic value.  !Ref is used to refer the parameter in template.
+Parameters: 
+  BucketNameParameter:
+    Type: String 
+    Default: my-s3-bucket-cloud-2021-08-29
+    Description: creating the s3 bucket.
+    MaxLength: 100
+    MinLength: 20
+
+# Below is example of to get values from SSM parameter store.
+  SSMParameterStore:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /EC2/AMI_ID                  # this SSM parameter should be maintained.
+
+# Below is used to get the PUBLIC SSM parameter values like AMI ID.    
+  ImageId: 
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: /aws/service/ami-amazon-linux-latest/amzn-ami-hvm-x86_64-ebs
+
+# Mapping is used for known hard code the value.
+Mappings:
+  RegionMap: 
+    us-east-1:
+      HVM64: ami-0ff8a91507f77f867
+      HVMG2: ami-0a584ac55a7631c0c
+    us-west-1:
+      HVM64: ami-0bdb828fd58c52235
+      HVMG2: ami-066ee5fd4a9ef77f1
+    eu-west-1:
+      HVM64: ami-047bb4163c506cd98
+      HVMG2: ami-0a7c483d527806435
+    ap-northeast-1:
+      HVM64: ami-06cd52961ce9f0d85
+      HVMG2: ami-053cdd503598e4a9d
+    ap-southeast-1:
+      HVM64: ami-08569b978cc4dfa10
+      HVMG2: ami-0be9df32ae9f92309
+
+# Output is used to send the value to other stack or to display in console or cli. !ImportValue is used in another stak to import the value.
+Outputs:
+  myoutput1:
+    Description: It displays the output values
+    Value: !Ref BucketNameParameter
+    Export:
+      Name: !Join [":", ["Hello","World"]]
+
+  myoutput2:
+    Description: It displays the output values
+    Value: !GetAtt Mys3bucket.Arn
+    Condition: CreateS3Bucket
+  
+
+# conditions are used to create the conditions. based on this, resource can be created. !Not, !If etc.
+Conditions:
+  CreateS3Bucket: !Equals 
+    - !Ref BucketNameParameter
+    - my-s3-bucket-cloud-2021-08-28
+
+
+# Rules are used to ensure the condition are met which include assertion. RuleCondition is optional and can be 1 or more assertion.
+Rules: 
+  BucketNamesValidation:
+    RuleCondition: !Equals
+      - !Ref BucketNameParameter
+      - my-s3-bucket-cloud-2021-08-28
+    Assertions:
+      - Assert:
+          'Fn::Contains': 
+             - - my-s3-bucket-cloud-2021-08-28
+             - !Ref BucketNameParameter
+        AssertDescription: Assertion checks whether bucknet name is same as given name.
