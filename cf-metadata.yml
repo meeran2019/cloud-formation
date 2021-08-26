@@ -3,7 +3,6 @@
 # METADATA:
 #     It consists of Designer, Authentication , Init & Interface (group and order of parameters)
 
-
 Resources:
   myEc2Instance:
     Type: AWS::EC2::Instance

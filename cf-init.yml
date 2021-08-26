@@ -1,0 +1,52 @@
+# 1. To understand how the user data is passed manually thorugh console while create the instancce.
+# 2. To understand how to pass user data though cloud formation template. Here problem is we dont know whether user data is    executed successfully or not.
+# 3. To overcome this problem, cfn init is used.
+# cfn-init is used to retrieve and interpret the resource metadata , installing packages, creating files and starting services.
+# cfn-signal is used with creation policy or wait condition, it helps to signal when application is ready.
+# cfn-get-metadata is used to get the metadata details.
+# cfn-hub is used to check any changes in metadata and execute custom hooks when noticed changes.
+# cfn-init -> cfn-signal -> cfn-hub
+
+# Please refer the cf-init-follow file for more details.
+
+
+Resources:
+  myEc2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId 
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        - !Ref WebServerSecurityGroup
+      UserData:
+        Fn::Base64:  | 
+           #!/bin/bash
+           yum update -y
+           yum install -y httpd          
+           systemctl start httpd
+           systemctl enable httpd
+
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Enable HTTP access via port 80 + SSH access"
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: 80
+        IpProtocol: tcp
+        ToPort: 80
+      - CidrIp: 0.0.0.0/0
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22
+
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 key pair for SSH access to the EC2 instance.
+    Type: AWS::EC2::KeyPair::KeyName
+
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+

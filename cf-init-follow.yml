@@ -1,0 +1,95 @@
+# Sample program on usage of cfn-init & cfn-signal.
+# Creation policy is used along with cfn-signal to wait for the signal from ec2.
+
+Resources:
+  myEc2Instance:
+    Type: AWS::EC2::Instance
+    CreationPolicy:                           # it waited for the cfn-signal from ec2.
+      ResourceSignal:
+        Timeout: PT20M                        # till how long to wait for signal before timeout in minutes.
+        Count: 1                              # no of signal count to wait.            
+    Properties:     
+      ImageId: !Ref ImageId 
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        - !Ref WebServerSecurityGroup
+      UserData:                               # user data is used to call the cfn init/signal/hub helper scripts.
+        Fn::Base64:
+          'Fn::Join':
+            - ''
+            - - |
+                #!/bin/bash -x
+              - |
+                # Install the files and packages from the metadata
+              - '/opt/aws/bin/cfn-init -v '
+              - '         --stack '
+              - !Ref 'AWS::StackName'
+              - '         --resource myEc2Instance '
+              - '         --region '
+              - !Ref 'AWS::Region'
+              - |+
+
+              - |
+                # Signal the status from cfn-init
+              - '/opt/aws/bin/cfn-signal -e $? '
+              - '         --stack '
+              - !Ref 'AWS::StackName'
+              - '         --resource myEc2Instance '
+              - '         --region '
+              - !Ref 'AWS::Region'
+              - |+
+
+    Metadata:                               # this metadata is used by the cfn-init to execute the details in metadata.
+      AWS::CloudFormation::Init:
+        config:                             # configs can be grouped by using config sets.
+          packages:                         # install package details.
+            yum:
+              httpd: []
+          groups:                           # create the linux group.
+            httpdgrp: {}
+          users:                            # create the linux users.
+            myUser:
+              groups: 
+                - "httpdgrp"  
+              uid: "50"
+              homeDir: "/tmp"
+          sources:                          # to download the data to ec2 in zip or tar format only.
+            /tmp/: "https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-zip-file.zip"
+          files:                            # to create the file with content.
+            /tmp/test:
+              content: |
+                This is test file
+          commands:                         # to execute the command in ec2.
+            test:
+              command: "echo hello world"
+          services:                         # to enable and start the service.
+            sysvinit:
+              httpd:
+                enabled: "true"
+                ensureRunning: "true"
+
+
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Enable HTTP access via port 80 + SSH access"
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: 80
+        IpProtocol: tcp
+        ToPort: 80
+      - CidrIp: 0.0.0.0/0
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22
+
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 key pair for SSH access to the EC2 instance.
+    Type: AWS::EC2::KeyPair::KeyName            # this is AWS parameter which helps to show in dropdown if have multiple values.
+
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+    
