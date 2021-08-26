@@ -1,0 +1,50 @@
+
+# nested stack is stack within stack.
+# it helps to reduce to write the repeated codes again.
+# it is similar to function analogy.
+# Cross stalk is used when different life cycle. It uses output export and import value.
+# cross stalk allows to run as separate stalk so no need to modify the parent stalk if any changes.
+
+Resources:
+  myEc2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId 
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        - !Ref WebServerSecurityGroup
+
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Enable HTTP access via port 80 + SSH access"
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: 80
+        IpProtocol: tcp
+        ToPort: 80
+      - CidrIp: 0.0.0.0/0
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22
+  
+  NestedStack:                              
+    Type: 'AWS::CloudFormation::Stack'          # Type Stack is used for nested stack.
+    DeletionPolicy: Delete
+    Properties:
+      TemplateURL: >-                           # in templaste, gives the s3 buket link of child stack.
+        https://my-s3-bucket-cloud-2021-08-23.s3.amazonaws.com/cf-nested-stack-child.yml
+
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 key pair for SSH access to the EC2 instance.
+    Type: AWS::EC2::KeyPair::KeyName
+
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+Outputs:
+  S3Bucket:
+    Value: !GetAtt NestedStack.Outputs.s3ArnName        # to get the value from nested stak in format -> nestedstackname.Outputs.Outputname

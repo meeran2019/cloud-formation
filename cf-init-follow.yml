@@ -42,7 +42,7 @@ Resources:
 
     Metadata:                               # this metadata is used by the cfn-init to execute the details in metadata.
       AWS::CloudFormation::Init:
-        config:                             # configs can be grouped by using config sets.
+        config:                             # configs can be grouped by using config sets. configset execute in alphabetic order.
           packages:                         # install package details.
             yum:
               httpd: []

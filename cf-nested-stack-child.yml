@@ -1,0 +1,11 @@
+# this is used as nested stack child.
+
+Resources:
+  Mys3bucket:
+    Type: AWS::S3::Bucket
+
+Outputs:                        # this output value is retrieved by parent stack.
+  s3ArnName:
+    Description: It displays the output values
+    Value: !GetAtt Mys3bucket.Arn
+    

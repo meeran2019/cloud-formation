@@ -4,7 +4,7 @@
 # cfn-init is used to retrieve and interpret the resource metadata , installing packages, creating files and starting services.
 # cfn-signal is used with creation policy or wait condition, it helps to signal when application is ready.
 # cfn-get-metadata is used to get the metadata details.
-# cfn-hub is used to check any changes in metadata and execute custom hooks when noticed changes.
+# cfn-hub is used to check any changes in metadata and execute custom hooks when noticed changes for every 15 minutes.
 # cfn-init -> cfn-signal -> cfn-hub
 
 # Please refer the cf-init-follow file for more details.
