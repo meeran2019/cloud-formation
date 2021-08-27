@@ -1,0 +1,128 @@
+
+# Cloud Formation Pipeline - It is used to automate the pipeline to trigger the stack.
+# NOTE: Deleting the main stack does not delete the pipeline stack.
+
+Resources:
+  AppPipeline: 
+    Type: AWS::CodePipeline::Pipeline                     # codepipeline is used to create the pipeline.
+    Properties: 
+      RoleArn: !GetAtt [CodePipelineServiceRole, Arn]     # service role for the code pipeline.
+      Stages:                                             # it has multiple stages.
+        - 
+          Name: Source 
+          Actions: 
+            - 
+              Name: SourceAction
+              ActionTypeId: 
+                Category: Source 
+                Owner: AWS 
+                Version: 1 
+                Provider: S3                              # source code contain in S3
+              OutputArtifacts: 
+                - 
+                  Name: SourceOutput 
+              Configuration: 
+                S3Bucket: 
+                  Ref: SourceS3Bucket                     # source bucket name.
+                S3ObjectKey: 
+                  Ref: SourceS3ObjectKey                  # source code file name in zip format.
+              RunOrder: 1 
+        - 
+          Name: Beta 
+          Actions: 
+            - 
+              Name: BetaAction 
+              InputArtifacts: 
+                -
+                  Name: SourceOutput 
+              ActionTypeId: 
+                Category: Deploy 
+                Owner: AWS 
+                Version: 1 
+                Provider: CloudFormation                  # here provider is CloudFormation.
+              Configuration:
+                ActionMode: REPLACE_ON_FAILURE
+                RoleArn: !GetAtt [CFNRole, Arn]
+                StackName: !Ref TestStackName
+#                TemplateConfiguration: !Sub "SourceOutput::${TestStackConfig}"
+                TemplatePath: !Sub "SourceOutput::${TemplateFileName}"
+              RunOrder: '1'
+        
+
+      ArtifactStore: 
+        Type: S3 
+        Location:
+          Ref: ArtifactStoreS3Location                    # s3 bucket to store output artifacts.
+  #      EncryptionKey:
+  #        Id: arn:aws:kms:useast-1:ACCOUNT-ID:key/KEY-ID
+  #        Type: KMS
+
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: ['sts:AssumeRole']
+          Effect: Allow
+          Principal:
+            Service: [codepipeline.amazonaws.com]
+        Version: '2012-10-17'
+      Path: /
+      Policies:
+        - PolicyName: CodePipelineAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                - '*'
+                Effect: Allow
+                Resource: '*'
+  
+  CFNRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: ['sts:AssumeRole']
+          Effect: Allow
+          Principal:
+            Service: [cloudformation.amazonaws.com]
+        Version: '2012-10-17'
+      Path: /
+      Policies:
+        - PolicyName: CloudFormationRole
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - '*'
+                Effect: Allow
+                Resource: '*'
+  
+
+
+Parameters: 
+  SourceS3Bucket:
+    Type: String 
+    Default: my-s3-bucket-cloud-2021-08-23
+    Description: S3 bucket path which contain the code 
+
+  SourceS3ObjectKey:
+    Type: String 
+    Default: cf-nested-stack-child.yml.zip
+    Description: file name of code
+      
+  ArtifactStoreS3Location:
+    Type: String 
+    Default: my-s3-bucket-cloud-2021-08-22
+    Description: artifact store s3 location
+
+  TemplateFileName:
+    Default: cf-nested-stack-child.yml
+    Description: The file name of the WordPress template
+    Type: String
+
+  TestStackName:
+    Default: codepipeline-create-stack-s3
+    Description: A name for the test WordPress stack
+    Type: String

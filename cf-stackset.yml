@@ -1,0 +1,23 @@
+# update, delete , create stacks across multiple accounts and region through single operation.
+# ccan select Organization Unit and Region to deploy the stack.
+
+
+Resources:
+  Mys3bucket:
+    Type: AWS::S3::Bucket
+
+Outputs:                        # this output value is retrieved by parent stack.
+  s3ArnName:
+    Description: It displays the output values
+    Value: !GetAtt Mys3bucket.Arn
+
+
+# below is an example of quick link create to go directly to the stack or create using 'create quick link' option before submit.
+
+#  https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create/review
+#    ?templateURL=s3://my-s3-bucket-cloud-2021-08-23/cf-nested-stack-child.yml
+#   &stackName=MyWPBlog
+#   &param_DBName=mywpblog
+#   &param_InstanceType=t2.medium
+#   &param_KeyName=MyKeyPair
+
