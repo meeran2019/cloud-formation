@@ -1,0 +1,71 @@
+# MACRO is used to modify the template or snippet (resource) level. 
+# clouformation macro consists of,
+# 1. create the lambda function.
+# 2. create the macro by using the lambda function.
+# 3. use the macro in Transform stack.
+
+# BELOW IS EXAMPLE OF DEFINITION OF MACRO AND LAMBDA FUNCTION.
+
+Resources:
+  LambdaFunction:
+        Type: AWS::Lambda::Function                             # create the lambda function.
+        Properties:
+            Code:
+                ZipFile: |
+                  import boto3
+                  def handler(event, context):                  # below are the values received from event handler.
+                    # Globals
+                    region = event['region']
+                    accountId = event['accountId']
+                    fragment = event['fragment']
+                    transformId = event['transformId']
+                    params = event['params']
+                    requestId = event['requestId']
+                    templateParameterValues = event['templateParameterValues']
+
+                    r = {}
+                    r['requestId'] = requestId
+                    r['status'] = 'SUCCESS'
+                    r['fragment'] = fragment
+                    print(r)
+                    return r                                    # generally process the request and return the modified template in fragement variable.
+            Handler: index.handler
+            Runtime: python3.6
+            Timeout: '60'
+            Role: !GetAtt LambdaExecutionRole.Arn
+
+  LambdaExecutionRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                        Service: [lambda.amazonaws.com]
+                      Action: ['sts:AssumeRole']
+            Path: /
+            Policies:
+                - PolicyName: root
+                  PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                        - Effect: Allow
+                          Action: ['logs:*']
+                          Resource: 'arn:aws:logs:*:*:*'
+                        - Effect: Allow
+                          Action: ['*']
+                          Resource: '*'
+
+  LambdaFunctionPermissions:
+        Type: AWS::Lambda::Permission
+        Properties:
+            Action: 'lambda:InvokeFunction'
+            FunctionName: !GetAtt LambdaFunction.Arn
+            Principal: 'cloudformation.amazonaws.com'
+
+  Transform:                                
+    Type: AWS::CloudFormation::Macro                    # this is to define the macro under resources.
+    Properties:
+      Name: macroname
+      FunctionName: !GetAtt LambdaFunction.Arn          # ARN of lambda function to call.

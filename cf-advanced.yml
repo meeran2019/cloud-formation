@@ -1,0 +1,20 @@
+
+# Not for all resources, cloudformation is available. Custom resources helps to create resources which are unavailable, Non AWS resources, 
+# It is backed by SNS and Lambda type.
+# Type create with 'Custom::custom-name'
+# In properties, "ServiceToken" is an ARN of Lambda or SNS topic.
+
+# !Ref or Fn::Ref, Fn::GetAtt, Fn::FindInMap, Fn::ImportValue, Fn::Join, Fn::SUb, Fn:Base64, Fn::Cidr, Fn::GetAzs, Fn::Select, Fn::Split, Fn::Transform (Macros)
+
+# Fn::If, Fn::Not, Fn::Equals
+
+ 
+
+
+
+
+
+
+
+
+

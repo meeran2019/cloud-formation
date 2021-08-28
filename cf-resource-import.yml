@@ -1,0 +1,13 @@
+# RESOURCE IMPORT
+# To import resources which create out of cloud formation into stack. It requires to create template which contains originl stack + target resources to import.
+
+# To create EC2 instance
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    DeletionPolicy: Delete
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0c2b8ca1dad447f8a
+      
+  

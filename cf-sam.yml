@@ -1,0 +1,10 @@
+
+# Serverless Application Model (SAM)
+# It uses for serverless and under the hood uses cloud formation.
+# Transform header indicates SAM.
+# AWS::serverless::function/API/simple table.
+
+
+# CDK  - Cloud Development Kid
+# It is used for all services and can support multiple languages like python, nodejs etc.
+
