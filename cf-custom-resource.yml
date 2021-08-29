@@ -1,0 +1,80 @@
+
+# Not for all resources, cloudformation is available. Custom resources helps to create resources which are unavailable, Non AWS resources, 
+# It is backed by SNS and Lambda type.
+# Type create with 'Custom::custom-name'
+# In properties, "ServiceToken" is an ARN of Lambda or SNS topic.
+
+# !Ref or Fn::Ref, Fn::GetAtt, Fn::FindInMap, Fn::ImportValue, Fn::Join, Fn::SUb, Fn:Base64, Fn::Cidr, Fn::GetAzs, Fn::Select, Fn::Split, Fn::Transform (Macros)
+
+# Fn::If, Fn::Not, Fn::Equals
+
+# NOTE: In request, can pass the type as Create/Update/Delete , based on this during cloudformation process , lambda function will be called. 
+
+
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:                                                 # this is to get the parameter.
+  AppName: 
+    Type: String
+    Default: Lambda Application
+
+Resources:                                                  # to define the resources.
+  PinpointApp:
+    Type: 'Custom::LambdaorSNSApp'                          # to define the custom resources.
+    Properties:
+      Name: !Ref AppName
+      ServiceToken: !GetAtt LambdaFunction.Arn              # to pass the ARN of lambda function.
+  
+  LambdaFunction:
+    Type: AWS::Lambda::Function                             # create the lambda function.
+    Properties:
+          Handler: index.handler
+          Runtime: python3.6
+          Timeout: '60'
+          Role: !GetAtt LambdaExecutionRole.Arn
+          Code:
+            ZipFile: |                                      # in python code, to do some process.
+                  import json
+                  import cfnresponse
+                  def handler(event, context):
+                    responseValue = event['ResourceProperties']
+                    responseData = {}
+                    responseData['Data'] = responseValue
+                    print(responseData)
+                    cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, "CustomResourcePhysicalID")            
+                    
+  LambdaExecutionRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                        Service: [lambda.amazonaws.com]
+                      Action: ['sts:AssumeRole']
+            Path: /
+            Policies:
+                - PolicyName: root
+                  PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                        - Effect: Allow
+                          Action: ['logs:*']
+                          Resource: 'arn:aws:logs:*:*:*'
+                        - Effect: Allow
+                          Action: ['*']
+                          Resource: '*'
+
+  LambdaFunctionPermissions:
+        Type: AWS::Lambda::Permission
+        Properties:
+            Action: 'lambda:InvokeFunction'
+            FunctionName: !GetAtt LambdaFunction.Arn
+            Principal: 'cloudformation.amazonaws.com'
+
+
+
+
+
+
+
