@@ -1,6 +1,9 @@
 # Sample program on usage of cfn-init & cfn-signal.
 # Creation policy is used along with cfn-signal to wait for the signal from ec2.
 
+# wait condition is a resource and Resource signal is attribute. Currently only autoscaling group, ec2, wait condition supports the resource signal. 
+# Use resource policy for ec2 and wait condition if require with actions to external stack.
+
 Resources:
   myEc2Instance:
     Type: AWS::EC2::Instance

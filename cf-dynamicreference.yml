@@ -1,0 +1,10 @@
+# Dynamic Reference is used to retrive the value externally to Stack from SSM parameter store.
+# This is different from used in parameter, here use the resolve to update directly.
+# SSM parameter type like plain, secure etc can be used.
+
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0c2b8ca1dad447f8a
+      InstanceType: '{{resolve:ssm:/EC2/InstanceType:1}}'

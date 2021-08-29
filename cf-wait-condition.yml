@@ -1,0 +1,56 @@
+
+# wait condition is a resource and Resource signal is attribute. Currently only autoscaling group, ec2, wait condition supports the resource signal. 
+# Use resource policy for ec2 and wait condition if require with actions to external stack.
+
+# it consists of to create 1. waitconditionhandle, waitcondition and signal to pass.
+
+
+Resources:                                                        # to create the resources.
+  waitconditionhandle:                                            # handlecondition require.
+    Type: AWS::CloudFormation::WaitConditionHandle
+    
+  waitcondition:                                                  # to define the wait condition.
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: myEc2Instance
+    Properties: 
+      Count: 1
+      Handle: !Ref waitconditionhandle
+      Timeout: '180'
+
+  myEc2Instance:
+    Type: AWS::EC2::Instance
+    Properties:     
+      ImageId: !Ref ImageId 
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        - !Ref WebServerSecurityGroup
+      UserData:                               # user data is used to call the cfn init/signal/hub helper scripts.
+        "Fn::Base64":  !Sub |
+            #!/bin/bash
+            # signal the status from instance.
+            /opt/aws/bin/cfn-signal -e $? -d "message data" -r "reason as completed" '${waitconditionhandle}'
+            
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Enable HTTP access via port 80 + SSH access"
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: 80
+        IpProtocol: tcp
+        ToPort: 80
+      - CidrIp: 0.0.0.0/0
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22
+
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 key pair for SSH access to the EC2 instance.
+    Type: AWS::EC2::KeyPair::KeyName            # this is AWS parameter which helps to show in dropdown if have multiple values.
+
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+    
